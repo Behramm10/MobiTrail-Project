@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MobiTrail Admin Dashboard</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        .navbar-custom {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        .main-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            margin-top: 30px;
+            padding: 30px;
+        }
+        .stat-card {
+            border-radius: 12px;
+            padding: 20px;
+            color: white;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.05);
+            transition: transform 0.2s ease;
+        }
+        .stat-card:hover {
+            transform: translateY(-4px);
+        }
+        .card-total { background: linear-gradient(135deg, #6f42c1 0%, #4364f7 100%); }
+        .card-approved { background: linear-gradient(135deg, #28a745 0%, #11998e 100%); }
+        .card-pending { background: linear-gradient(135deg, #fd7e14 0%, #f12711 100%); }
+        .card-rejected { background: linear-gradient(135deg, #dc3545 0%, #b21f2d 100%); }
+        
+        .badge-present { background-color: #28a745; color: white; }
+        .badge-late { background-color: #ffc107; color: #333; }
+        .badge-pending { background-color: #fd7e14; color: white; }
+        
+        .table-responsive {
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+        .btn-audit {
+            background-color: #6f42c1;
+            color: white;
+            border-radius: 8px;
+            border: none;
+            padding: 6px 16px;
+            transition: all 0.2s;
+        }
+        .btn-audit:hover {
+            background-color: #5a32a3;
+            color: white;
+        }
+        .footer {
+            margin-top: 40px;
+            text-align: center;
+            font-size: 0.85rem;
+            color: #777;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Nav Bar -->
+    <nav class="navbar navbar-expand-lg navbar-light navbar-custom py-3">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center" href="#">
+                <span class="fs-4 fw-bold text-primary">👤 MobiTrail FaceReco Admin</span>
+            </a>
+            <div class="d-flex text-muted font-monospace small">
+                Office: {{ office_lat }}, {{ office_lon }}
+            </div>
+        </div>
+    </nav>
+
+    <!-- Content Container -->
+    <div class="container">
+        <div class="main-card">
+            <!-- Title, Filter & Export Row -->
+            <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+                <h2 class="fw-bold m-0 text-primary">Live Attendance Dashboard</h2>
+                <div class="d-flex align-items-center gap-3">
+                    <!-- Date Selector Form -->
+                    <form method="get" action="/admin/dashboard" class="d-flex align-items-center gap-2">
+                        <label for="date-select" class="small fw-semibold text-secondary text-nowrap m-0">Filter Date:</label>
+                        <input type="date" id="date-select" name="date" class="form-control form-control-sm" value="{{ selected_date }}" onchange="this.form.submit()">
+                    </form>
+                    <!-- Export to CSV Button -->
+                    <a href="/admin/export-csv?date={{ selected_date }}" class="btn btn-success btn-sm fw-semibold d-flex align-items-center gap-1 shadow-sm">
+                        📥 Export to CSV
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Statistics Cards Grid -->
+            <div class="row g-4 mb-5">
+                <div class="col-md-3">
+                    <div class="stat-card card-total">
+                        <small class="text-uppercase opacity-75">Total Logged</small>
+                        <h2 class="fw-bold mt-2 mb-0">{{ total }}</h2>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card card-approved">
+                        <small class="text-uppercase opacity-75">Approved Logs</small>
+                        <h2 class="fw-bold mt-2 mb-0">{{ approved }}</h2>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card card-pending">
+                        <small class="text-uppercase opacity-75">Pending Audit</small>
+                        <h2 class="fw-bold mt-2 mb-0">{{ pending }}</h2>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card card-rejected">
+                        <small class="text-uppercase opacity-75">Rejected Logs</small>
+                        <h2 class="fw-bold mt-2 mb-0">{{ rejected }}</h2>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Attendance Table -->
+            <h4 class="fw-bold mb-3 text-secondary">Attendance Logs for {{ selected_date }}</h4>
+            <div class="table-responsive bg-white">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">Employee ID</th>
+                            <th>Employee Name</th>
+                            <th>Time In</th>
+                            <th>Time Out</th>
+                            <th>Match Score</th>
+                            <th>Distance to Office</th>
+                            <th class="text-end pe-4">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if logs %}
+                            {% for log in logs %}
+                            <tr>
+                                <td class="ps-4 fw-semibold">{{ log.employee_id }}</td>
+                                <td>{{ log.name }}</td>
+                                <td>
+                                    {% if log.time_in_time %}
+                                        <div class="fw-semibold">{{ log.time_in_time.strftime('%I:%M:%S %p') }}</div>
+                                        <div class="mt-1">
+                                            {% if log.time_in_status == 'APPROVED' %}
+                                                <span class="badge bg-success px-2 py-1 rounded-pill">Approved</span>
+                                            {% elif log.time_in_status == 'WAITING_FOR_APPROVAL' %}
+                                                <span class="badge bg-warning text-dark px-2 py-1 rounded-pill">Pending</span>
+                                            {% elif log.time_in_status == 'REJECTED' %}
+                                                <span class="badge bg-danger px-2 py-1 rounded-pill">Rejected</span>
+                                            {% endif %}
+                                        </div>
+                                    {% else %}
+                                        <span class="text-muted small">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if log.time_out_time %}
+                                        <div class="fw-semibold">{{ log.time_out_time.strftime('%I:%M:%S %p') }}</div>
+                                        <div class="mt-1">
+                                            {% if log.time_out_status == 'APPROVED' %}
+                                                <span class="badge bg-success px-2 py-1 rounded-pill">Approved</span>
+                                            {% elif log.time_out_status == 'WAITING_FOR_APPROVAL' %}
+                                                <span class="badge bg-warning text-dark px-2 py-1 rounded-pill">Pending</span>
+                                            {% elif log.time_out_status == 'REJECTED' %}
+                                                <span class="badge bg-danger px-2 py-1 rounded-pill">Rejected</span>
+                                            {% endif %}
+                                        </div>
+                                    {% else %}
+                                        <span class="text-muted small">Not Attempted</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if log.time_in_similarity_score is not none %}
+                                        <div class="d-flex align-items-center mb-1">
+                                            <span class="small text-muted me-2" style="width: 25px;">In:</span>
+                                            <div class="progress me-2" style="width: 45px; height: 6px;">
+                                                <div class="progress-bar bg-success" role="progressbar" style="width: {{ log.time_in_similarity_score }}%"></div>
+                                            </div>
+                                            <span class="small font-monospace">{{ log.time_in_similarity_score }}%</span>
+                                        </div>
+                                    {% endif %}
+                                    {% if log.time_out_similarity_score is not none %}
+                                        <div class="d-flex align-items-center">
+                                            <span class="small text-muted me-2" style="width: 25px;">Out:</span>
+                                            <div class="progress me-2" style="width: 45px; height: 6px;">
+                                                <div class="progress-bar bg-success" role="progressbar" style="width: {{ log.time_out_similarity_score }}%"></div>
+                                            </div>
+                                            <span class="small font-monospace">{{ log.time_out_similarity_score }}%</span>
+                                        </div>
+                                    {% endif %}
+                                </td>
+                                <td class="small text-muted font-monospace">
+                                    {% if log.time_in_distance_meters is not none %}
+                                        <div>In: {{ "%.2f"|format(log.time_in_distance_meters) }}m</div>
+                                    {% endif %}
+                                    {% if log.time_out_distance_meters is not none %}
+                                        <div>Out: {{ "%.2f"|format(log.time_out_distance_meters) }}m</div>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end pe-4">
+                                    <a href="/admin/audit/{{ log.attendance_id }}" class="btn btn-audit">
+                                        🔍 Audit Photo
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="7" class="text-center py-5 text-muted">
+                                    No attendance records logged for this date yet.
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div class="footer">
+            MobiTrail Face Recognition Attendance System Backend • Dashboard View
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 Bundle JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -21,7 +21,7 @@ class Config:
     # Geographic location of the office coordinates provided by the user
     OFFICE_LATITUDE = float(os.environ.get("OFFICE_LATITUDE", 19.1748076))
     OFFICE_LONGITUDE = float(os.environ.get("OFFICE_LONGITUDE", 72.8576635))
-    GEOFENCE_RADIUS_METERS = float(os.environ.get("GEOFENCE_RADIUS_METERS", 9999999.0))
+    GEOFENCE_RADIUS_METERS = float(os.environ.get("GEOFENCE_RADIUS_METERS", 99.0))
 
     # ==================== FACE RECOGNITION CONFIG ====================
     # ArcFace cosine similarity thresholds (mapped as: similarity = (1 - cosine_distance) * 100)
